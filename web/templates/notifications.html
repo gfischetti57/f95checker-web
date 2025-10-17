@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Notifiche - F95Checker Web{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5><i class="fas fa-bell"></i> Storico Notifiche</h5>
+    </div>
+    <div class="card-body">
+        {% if notifications %}
+            <div class="list-group">
+                {% for notification in notifications %}
+                <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">
+                            {% if notification.notification_type == 'update' %}
+                                <i class="fas fa-sync text-success"></i>
+                            {% elif notification.notification_type == 'new' %}
+                                <i class="fas fa-plus text-info"></i>
+                            {% else %}
+                                <i class="fas fa-exclamation text-warning"></i>
+                            {% endif %}
+                            {{ notification.notification_type.title() }}
+                        </h6>
+                        <small>{{ notification.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                    </div>
+                    <p class="mb-1">{{ notification.message }}</p>
+                    <small>
+                        {% if notification.is_sent %}
+                            <span class="badge bg-success">Inviata</span>
+                            {{ notification.sent_at.strftime('%d/%m/%Y %H:%M') }}
+                        {% else %}
+                            <span class="badge bg-warning">In attesa</span>
+                        {% endif %}
+                    </small>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-bell-slash fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">Nessuna notifica</h4>
+                <p class="text-muted">Le notifiche appariranno qui quando ci saranno aggiornamenti</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

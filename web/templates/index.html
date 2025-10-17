@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Home - F95Checker Web{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-gamepad"></i> Giochi Monitorati</h5>
+                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addGameModal">
+                    <i class="fas fa-plus"></i> Aggiungi Gioco
+                </button>
+            </div>
+            <div class="card-body">
+                {% if games %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Titolo</th>
+                                    <th>Versione</th>
+                                    <th>Ultimo Controllo</th>
+                                    <th>Azioni</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for game in games %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ game.url }}" target="_blank" class="text-decoration-none">
+                                            {{ game.title }}
+                                        </a>
+                                    </td>
+                                    <td><span class="badge bg-info">{{ game.version }}</span></td>
+                                    <td>{{ game.last_checked.strftime('%d/%m/%Y %H:%M') if game.last_checked else 'Mai' }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteGame({{ game.id }})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-gamepad fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Nessun gioco monitorato. Aggiungi il primo!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-bell"></i> Controlli</h5>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-success w-100 mb-3" onclick="checkUpdates()">
+                    <i class="fas fa-sync"></i> Controlla Aggiornamenti
+                </button>
+                <div class="alert alert-info">
+                    <small>
+                        <i class="fas fa-info-circle"></i>
+                        I controlli automatici vengono eseguiti ogni ora.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Aggiungi Gioco -->
+<div class="modal fade" id="addGameModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Aggiungi Nuovo Gioco</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addGameForm">
+                    <div class="mb-3">
+                        <label for="gameUrl" class="form-label">URL F95Zone</label>
+                        <textarea class="form-control" id="gameUrl" rows="5" required 
+                               placeholder="https://f95zone.to/threads/game1.12345/&#10;https://f95zone.to/threads/game2.67890/&#10;https://f95zone.to/threads/4907"></textarea>
+                        <div class="form-text">Incolla uno o più URL (uno per riga)</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-primary" onclick="addGame()">Aggiungi</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function addGame() {
+    const url = document.getElementById('gameUrl').value;
+    if (!url) return;
+    
+    const btn = document.querySelector('#addGameModal .btn-primary');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Aggiungendo...';
+    
+    try {
+        const response = await fetch('/api/games', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({url: url})
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            let message = `${result.added} giochi aggiunti con successo!`;
+            if (result.errors && result.errors.length > 0) {
+                message += '\n\nErrori:\n' + result.errors.join('\n');
+            }
+            alert(message);
+            location.reload();
+        } else {
+            alert('Errore: ' + (result.error || result.errors?.join('\n')));
+        }
+    } catch (e) {
+        alert('Errore di connessione');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-plus"></i> Aggiungi';
+    }
+}
+
+async function deleteGame(gameId) {
+    if (!confirm('Sei sicuro di voler rimuovere questo gioco?')) return;
+    
+    try {
+        const response = await fetch(`/api/games/${gameId}`, {method: 'DELETE'});
+        if (response.ok) {
+            location.reload();
+        }
+    } catch (e) {
+        alert('Errore di connessione');
+    }
+}
+
+async function checkUpdates() {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Controllo...';
+    
+    try {
+        const response = await fetch('/api/check-updates', {method: 'POST'});
+        const result = await response.json();
+        alert(result.message);
+        location.reload();
+    } catch (e) {
+        alert('Errore di connessione');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sync"></i> Controlla Aggiornamenti';
+    }
+}
+</script>
+{% endblock %}

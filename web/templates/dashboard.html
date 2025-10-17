@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - F95Checker Web{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-gamepad fa-2x text-primary mb-2"></i>
+                <h4>{{ stats.total_games }}</h4>
+                <p class="text-muted">Giochi Totali</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-play fa-2x text-success mb-2"></i>
+                <h4>{{ stats.active_games }}</h4>
+                <p class="text-muted">Giochi Attivi</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-users fa-2x text-info mb-2"></i>
+                <h4>{{ stats.total_users }}</h4>
+                <p class="text-muted">Utenti</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-bell fa-2x text-warning mb-2"></i>
+                <h4>{{ stats.pending_notifications }}</h4>
+                <p class="text-muted">Notifiche Pending</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-line"></i> Controlli Automatici</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    Il sistema controlla automaticamente gli aggiornamenti ogni ora.
+                </div>
+                <button class="btn btn-primary" onclick="checkUpdates()">
+                    <i class="fas fa-sync"></i> Controlla Giochi
+                </button>
+                <button class="btn btn-info ms-2" onclick="checkGitHub()">
+                    <i class="fab fa-github"></i> Controlla F95Checker Updates
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function checkGitHub() {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Controllo...';
+    
+    try {
+        const response = await fetch('/api/check-github', {method: 'POST'});
+        const result = await response.json();
+        alert(result.message);
+        if (result.updates_found > 0) {
+            location.reload();
+        }
+    } catch (e) {
+        alert('Errore di connessione');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fab fa-github"></i> Controlla F95Checker Updates';
+    }
+}
+</script>
+{% endblock %}

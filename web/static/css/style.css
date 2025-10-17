@@ -1,0 +1,107 @@
+/* Custom styles for F95Checker Web */
+
+body {
+    background-color: #f8f9fa;
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid #dee2e6;
+    font-weight: 600;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.btn-outline-danger:hover {
+    color: #fff;
+}
+
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* Loading states */
+.btn:disabled {
+    opacity: 0.6;
+}
+
+.fa-spin {
+    animation: fa-spin 2s infinite linear;
+}
+
+@keyframes fa-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(359deg); }
+}
+
+/* Status indicators */
+.status-active {
+    color: #28a745;
+}
+
+.status-inactive {
+    color: #dc3545;
+}
+
+.status-pending {
+    color: #ffc107;
+}
+
+/* Custom scrollbar */
+.table-responsive::-webkit-scrollbar {
+    height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}

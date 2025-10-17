@@ -1,0 +1,39 @@
+# Systemd Service per F95Checker Web
+# File: /etc/systemd/system/f95checker.service
+
+[Unit]
+Description=F95Checker Web Application
+After=network.target
+Wants=network.target
+
+[Service]
+Type=exec
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/f95checker-web
+Environment=PATH=/home/ubuntu/f95checker-web/venv/bin
+Environment=FLASK_ENV=production
+Environment=SECRET_KEY=oracle-f95checker-secret-key-2024
+Environment=DATABASE_URL=sqlite:///f95checker.db
+Environment=TELEGRAM_BOT_TOKEN=8306286141:AAHgdSI6ntiQtqlYd_87aKunoWeL7FZIFBE
+
+ExecStart=/home/ubuntu/f95checker-web/venv/bin/gunicorn --bind 0.0.0.0:5000 --workers 2 --timeout 120 run:app
+ExecReload=/bin/kill -s HUP $MAINPID
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitInterval=60
+StartLimitBurst=3
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=f95checker
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}F95Checker Web{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-gamepad fa-2x text-primary mb-2"></i>
+                <h4>{{ stats.total_games }}</h4>
+                <p class="text-muted">Giochi Totali</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-play fa-2x text-success mb-2"></i>
+                <h4>{{ stats.active_games }}</h4>
+                <p class="text-muted">Giochi Attivi</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-users fa-2x text-info mb-2"></i>
+                <h4>{{ stats.total_users }}</h4>
+                <p class="text-muted">Utenti</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-bell fa-2x text-warning mb-2"></i>
+                <h4>{{ stats.pending_notifications }}</h4>
+                <p class="text-muted">Notifiche Pending</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-plus"></i> Aggiungi Giochi</h5>
+            </div>
+            <div class="card-body">
+                <form id="addGameForm">
+                    <div class="mb-3">
+                        <label for="gameUrl" class="form-label">URL F95Zone</label>
+                        <textarea class="form-control" id="gameUrl" rows="4" required 
+                               placeholder="https://f95zone.to/threads/game1.12345/&#10;https://f95zone.to/threads/game2.67890/&#10;https://f95zone.to/threads/4907"></textarea>
+                        <div class="form-text">Incolla uno o più URL (uno per riga)</div>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="addGame()">
+                        <i class="fas fa-plus"></i> Aggiungi Giochi
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-line"></i> Controlli</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    Controlli automatici ogni ora per giochi, ogni 6 ore per GitHub F95Checker.
+                </div>
+                <button class="btn btn-success w-100 mb-2" onclick="checkUpdates()">
+                    <i class="fas fa-sync"></i> Controlla Giochi
+                </button>
+                <button class="btn btn-info w-100 mb-2" onclick="checkGitHub()">
+                    <i class="fab fa-github"></i> Controlla F95Checker
+                </button>
+                <button class="btn btn-warning w-100" onclick="refreshAllGames()">
+                    <i class="fas fa-sync-alt"></i> Ricarica Dati Tutti Giochi
+                </button>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="fab fa-telegram"></i> Notifiche Telegram</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    Per ricevere notifiche su Telegram:
+                </div>
+                <ol>
+                    <li>Avvia chat con <a href="https://t.me/giorgiof95bot" target="_blank">@giorgiof95bot</a></li>
+                    <li>Invia <code>/start</code></li>
+                    <li>Copia il tuo chat_id e registrati qui sotto</li>
+                </ol>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="chatId" placeholder="Il tuo chat_id">
+                    <button class="btn btn-success" onclick="registerTelegram()">
+                        <i class="fab fa-telegram"></i> Registra
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function addGame() {
+    const url = document.getElementById('gameUrl').value;
+    if (!url) return;
+    
+    const btn = document.querySelector('#addGameForm .btn-primary');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Aggiungendo...';
+    
+    try {
+        const response = await fetch('/api/games', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({url: url})
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            let message = `${result.added} giochi aggiunti con successo!`;
+            if (result.errors && result.errors.length > 0) {
+                message += '\n\nErrori:\n' + result.errors.join('\n');
+            }
+            alert(message);
+            document.getElementById('gameUrl').value = '';
+            location.reload();
+        } else {
+            alert('Errore: ' + (result.error || result.errors?.join('\n')));
+        }
+    } catch (e) {
+        alert('Errore di connessione');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-plus"></i> Aggiungi Giochi';
+    }
+}
+
+async function checkUpdates() {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Controllo...';
+    
+    try {
+        const response = await fetch('/api/check-updates', {method: 'POST'});
+        const result = await response.json();
+        alert(result.message);
+        if (result.updates_found > 0) {
+            location.reload();
+        }
+    } catch (e) {
+        alert('Errore di connessione');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sync"></i> Controlla Giochi';
+    }
+}
+
+async function checkGitHub() {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Controllo...';
+    
+    try {
+        const response = await fetch('/api/check-github', {method: 'POST'});
+        const result = await response.json();
+        alert(result.message);
+        if (result.updates_found > 0) {
+            location.reload();
+        }
+    } catch (e) {
+        alert('Errore di connessione');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fab fa-github"></i> Controlla F95Checker';
+    }
+}
+
+async function refreshAllGames() {
+    if (!confirm('Ricaricare dati per tutti i giochi? Potrebbe richiedere alcuni minuti.')) return;
+    
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ricaricando...';
+    
+    try {
+        const response = await fetch('/api/refresh-all-games', {method: 'POST'});
+        const result = await response.json();
+        alert(result.message);
+        location.reload();
+    } catch (e) {
+        alert('Errore di connessione');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sync-alt"></i> Ricarica Dati Tutti Giochi';
+    }
+}
+
+async function registerTelegram() {
+    const chatId = document.getElementById('chatId').value;
+    if (!chatId) {
+        alert('Inserisci il tuo chat_id');
+        return;
+    }
+    
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
+    
+    try {
+        const response = await fetch('/api/register-telegram', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({chat_id: chatId})
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            alert('Registrazione completata! Controlla Telegram per il messaggio di benvenuto.');
+            document.getElementById('chatId').value = '';
+        } else {
+            alert('Errore: ' + result.error);
+        }
+    } catch (e) {
+        alert('Errore di connessione');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fab fa-telegram"></i> Registra';
+    }
+}
+</script>
+{% endblock %}

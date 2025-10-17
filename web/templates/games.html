@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Giochi - F95Checker Web{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5><i class="fas fa-gamepad"></i> Gestione Giochi</h5>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGameModal">
+            <i class="fas fa-plus"></i> Aggiungi Gioco
+        </button>
+    </div>
+    <div class="card-body">
+        {% if games %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th><a href="?sort=f95_id" class="text-decoration-none text-dark">ID F95</a></th>
+                            <th><a href="?sort=game_title" class="text-decoration-none text-dark">Gioco</a></th>
+                            <th><a href="?sort=version" class="text-decoration-none text-dark">Versione</a></th>
+                            <th><a href="?sort=rating" class="text-decoration-none text-dark">Rating</a></th>
+                            <th><a href="?sort=review_count" class="text-decoration-none text-dark">Recensioni</a></th>
+                            <th><a href="?sort=weighted_score" class="text-decoration-none text-dark">Score</a></th>
+                            <th><a href="?sort=last_updated" class="text-decoration-none text-dark">Ultimo Aggiornamento</a></th>
+                            <th>Stato</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for game in games %}
+                        <tr>
+                            <td><code>{{ game.f95_id }}</code></td>
+                            <td>
+                                <a href="/game/{{ game.id }}" class="text-decoration-none fw-bold">
+                                    {{ game.game_title or game.title }}
+                                </a>
+                                {% if game.status %}
+                                    {% set statuses = game.status.split(',') %}
+                                    {% for status in statuses %}
+                                        {% if status == 'completed' %}
+                                            <i class="fas fa-check-circle text-success ms-1" title="Completato"></i>
+                                        {% elif status == 'abandoned' %}
+                                            <i class="fas fa-times-circle text-danger ms-1" title="Abbandonato"></i>
+
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </td>
+                            <td><span class="badge bg-info">{{ game.version }}</span></td>
+                            <td>
+                                {% if game.rating %}
+                                    <span class="text-warning">
+                                        {% for i in range(5) %}
+                                            {% if i < game.rating %}
+                                                <i class="fas fa-star"></i>
+                                            {% else %}
+                                                <i class="far fa-star"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                        {{ "%.1f"|format(game.rating) }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ game.review_count or 0 }}</td>
+                            <td>
+                                {% if game.weighted_score %}
+                                    <span class="badge bg-primary">{{ "%.2f"|format(game.weighted_score) }}</span>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ game.f95_updated_date.strftime('%d/%m/%Y') if game.f95_updated_date else 'N/A' }}</td>
+                            <td>
+                                {% if game.is_active %}
+                                    <span class="badge bg-success">Attivo</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inattivo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary" onclick="checkSingleGame({{ game.id }})">
+                                        <i class="fas fa-sync"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="deleteGame({{ game.id }})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-gamepad fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">Nessun gioco monitorato</h4>
+                <p class="text-muted">Aggiungi il primo gioco per iniziare il monitoraggio!</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal Aggiungi Gioco -->
+<div class="modal fade" id="addGameModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Aggiungi Nuovo Gioco</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addGameForm">
+                    <div class="mb-3">
+                        <label for="gameUrl" class="form-label">URL F95Zone</label>
+                        <textarea class="form-control" id="gameUrl" rows="5" required 
+                               placeholder="https://f95zone.to/threads/game1.12345/&#10;https://f95zone.to/threads/game2.67890/&#10;https://f95zone.to/threads/4907"></textarea>
+                        <div class="form-text">
+                            Incolla uno o più URL (uno per riga) dei thread F95Zone
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-primary" onclick="addGame()">
+                    <i class="fas fa-plus"></i> Aggiungi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
