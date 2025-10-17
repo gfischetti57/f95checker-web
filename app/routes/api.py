@@ -1,9 +1,11 @@
 from flask import Blueprint, request, jsonify
+from werkzeug.utils import secure_filename
 from app import db
 from app.models import Game, User, Notification
 from app.services.f95_service import F95Service
 from app.services.notification_service import NotificationService
 from app.services.github_service import GitHubService
+from app.services.sync_service import SyncService
 from app.auth import requires_auth
 
 api_bp = Blueprint('api', __name__)
@@ -216,3 +218,47 @@ def refresh_all_games():
         'updated_count': updated_count,
         'total_games': len(games)
     })
+
+@api_bp.route('/sync-threads', methods=['POST'])
+@requires_auth
+def sync_threads():
+    """Sincronizza thread dal database desktop F95Checker"""
+    result = SyncService.sync_threads_from_desktop()
+    
+    if result['success']:
+        return jsonify({
+            'message': f"Sincronizzazione completata. Aggiunti: {result['added']}, Aggiornati: {result['updated']}",
+            'added': result['added'],
+            'updated': result['updated'],
+            'total_desktop': result['total_desktop'],
+            'total_web': result['total_web'],
+            'source': result.get('source', 'unknown')
+        })
+    else:
+        return jsonify({
+            'error': f"Errore sincronizzazione: {result['error']}"
+        }), 500
+
+@api_bp.route('/upload-db', methods=['POST'])
+@requires_auth
+def upload_db():
+    """Carica database desktop per sincronizzazione"""
+    if 'database' not in request.files:
+        return jsonify({'error': 'Nessun file caricato'}), 400
+    
+    file = request.files['database']
+    if file.filename == '':
+        return jsonify({'error': 'Nessun file selezionato'}), 400
+    
+    if file:
+        import os
+        upload_folder = 'uploads'
+        os.makedirs(upload_folder, exist_ok=True)
+        
+        filepath = os.path.join(upload_folder, 'f95checker.db')
+        file.save(filepath)
+        
+        return jsonify({
+            'message': 'Database caricato con successo. Ora puoi sincronizzare.',
+            'filename': file.filename
+        })

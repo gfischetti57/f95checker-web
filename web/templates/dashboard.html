@@ -59,6 +59,9 @@
                 <button class="btn btn-info ms-2" onclick="checkGitHub()">
                     <i class="fab fa-github"></i> Controlla F95Checker Updates
                 </button>
+                <button class="btn btn-success ms-2" onclick="syncThreads()">
+                    <i class="fas fa-sync-alt"></i> Sincronizza da Desktop
+                </button>
             </div>
         </div>
     </div>
@@ -86,5 +89,38 @@ async function checkGitHub() {
         btn.innerHTML = '<i class="fab fa-github"></i> Controlla F95Checker Updates';
     }
 }
+
+async function syncThreads() {
+    if (!confirm('Vuoi sincronizzare i thread dal database desktop?')) return;
+    
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sincronizzando...';
+    
+    try {
+        const response = await fetch('/api/sync-threads', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        });
+        const result = await response.json();
+        
+        if (response.ok) {
+            const source = result.source === 'desktop_db' ? 'database desktop' : 'lista predefinita';
+            alert(`Sincronizzazione completata (${source})!\nAggiunti: ${result.added}\nAggiornati: ${result.updated}`);
+            if (result.added > 0 || result.updated > 0) {
+                location.reload();
+            }
+        } else {
+            alert('Errore: ' + result.error);
+        }
+    } catch (e) {
+        alert('Errore di connessione: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sync-alt"></i> Sincronizza da Desktop';
+    }
+}
+
+
 </script>
 {% endblock %}
