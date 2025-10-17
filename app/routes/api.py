@@ -4,6 +4,7 @@ from app.models import Game, User, Notification
 from app.services.f95_service import F95Service
 from app.services.notification_service import NotificationService
 from app.services.github_service import GitHubService
+from app.auth import requires_auth
 
 api_bp = Blueprint('api', __name__)
 
@@ -14,6 +15,7 @@ def get_games():
     return jsonify([game.to_dict() for game in games])
 
 @api_bp.route('/games', methods=['POST'])
+@requires_auth
 def add_game():
     """Aggiungi uno o più giochi da monitorare"""
     data = request.get_json()
@@ -69,6 +71,7 @@ def add_game():
     return jsonify(response), 201 if results else 400
 
 @api_bp.route('/games/<int:game_id>', methods=['DELETE'])
+@requires_auth
 def delete_game(game_id):
     """Rimuovi gioco dal monitoraggio"""
     game = Game.query.get_or_404(game_id)
@@ -77,6 +80,7 @@ def delete_game(game_id):
     return '', 204
 
 @api_bp.route('/check-updates', methods=['POST'])
+@requires_auth
 def check_updates():
     """Forza controllo aggiornamenti"""
     f95_service = F95Service()
@@ -182,6 +186,7 @@ def github_info():
     return jsonify(info or {'error': 'Impossibile recuperare info repository'})
 
 @api_bp.route('/refresh-all-games', methods=['POST'])
+@requires_auth
 def refresh_all_games():
     """Ricarica dati per tutti i giochi esistenti"""
     f95_service = F95Service()
